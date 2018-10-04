@@ -4,6 +4,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.ProvisionException;
 import com.netflix.conductor.common.utils.ExternalPayloadStorage;
 import com.netflix.conductor.core.config.Configuration;
+import com.netflix.conductor.core.execution.WorkflowExecutorModule;
 import com.netflix.conductor.core.utils.DummyPayloadStorage;
 import com.netflix.conductor.core.utils.S3PayloadStorage;
 import com.netflix.conductor.dao.RedisWorkflowModule;
@@ -87,6 +88,9 @@ public class ModulesProvider implements Provider<List<AbstractModule>> {
         }
 
         modules.add(new ElasticSearchV5Module());
+
+
+        modules.add(new WorkflowExecutorModule());//dummy
 
         if (configuration.getJerseyEnabled()) {
             modules.add(new JerseyModule());
