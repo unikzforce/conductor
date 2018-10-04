@@ -113,7 +113,7 @@ public class QueueManager {
 				}
 				
 				if(!taskOptional.isPresent()) {
-					logger.error("No matching tasks to be found to be marked as completed for workflow {}", workflowId);
+					logger.error("No matching tasks to be found to be marked as completed for workflow {}, taskRefName {}, taskId {}", workflowId, taskRefName, taskId);
 					queue.ack(Arrays.asList(msg));
 					return;
 				}

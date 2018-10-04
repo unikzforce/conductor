@@ -93,19 +93,16 @@ public class ActionProcessor {
         String taskId = (String) replaced.get("taskId");
         String taskRefName = (String) replaced.get("taskRefName");
 
-        Workflow found = null;
-        if (StringUtils.isNotEmpty(workflowId)) {
-            found = executor.getWorkflow(workflowId, true);
-        }
-        if (found == null) {
-            replaced.put("error", "No workflow found with ID: " + workflowId);
-            return replaced;
-        }
         Task task = null;
         if (StringUtils.isNotEmpty(taskId)) {
-            task = found.getTasks().stream().filter(t -> taskId.equals(t.getTaskId())).findAny().orElse(null);
-        } else if (StringUtils.isNotEmpty(taskRefName)) {
-            task = found.getTaskByRefName(taskRefName);
+        	task = executor.getTask(taskId);
+        } else if (StringUtils.isNotEmpty(workflowId) && StringUtils.isNotEmpty(taskRefName)) {
+        	Workflow workflow = executor.getWorkflow(workflowId, true);
+			if (workflow == null) {
+				replaced.put("error", "No workflow found with ID: " + workflowId);
+				return replaced;
+			}
+            task = workflow.getTaskByRefName(taskRefName);
         }
 
         if (task == null) {

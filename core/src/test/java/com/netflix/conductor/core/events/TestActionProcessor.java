@@ -21,7 +21,6 @@ import com.netflix.conductor.common.metadata.workflow.WorkflowDef;
 import com.netflix.conductor.common.run.Workflow;
 import com.netflix.conductor.core.execution.ParametersUtils;
 import com.netflix.conductor.core.execution.WorkflowExecutor;
-import com.netflix.conductor.service.MetadataService;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,16 +28,13 @@ import org.mockito.ArgumentCaptor;
 
 public class TestActionProcessor {
     private WorkflowExecutor workflowExecutor;
-    private MetadataService metadataService;
     private ActionProcessor actionProcessor;
 
     @Before
     public void setup() {
         workflowExecutor = mock(WorkflowExecutor.class);
-        metadataService = mock(MetadataService.class);
 
-        actionProcessor = new ActionProcessor(workflowExecutor, metadataService, new ParametersUtils());
-
+        actionProcessor = new ActionProcessor(workflowExecutor, new ParametersUtils());
     }
 
     @Test
@@ -48,8 +44,8 @@ public class TestActionProcessor {
         startWorkflow.getInput().put("testInput", "${testId}");
 
         Action action = new Action();
-        action.setAction(Type.start_workflow);
-        action.setStart_workflow(startWorkflow);
+        action.setAction(Type.START_WORKFLOW);
+        action.setStartWorkflow(startWorkflow);
 
         Object payload = new ObjectMapper().readValue("{\"testId\":\"test_1\"}", Object.class);
 
@@ -57,8 +53,7 @@ public class TestActionProcessor {
         workflowDef.setName("testWorkflow");
         workflowDef.setVersion(1);
 
-        when(metadataService.getWorkflowDef(eq("testWorkflow"), any())).thenReturn(workflowDef);
-        when(workflowExecutor.startWorkflow(eq("testWorkflow"), eq(1), any(), any(), eq("testEvent")))
+        when(workflowExecutor.startWorkflow(eq("testWorkflow"), eq(null), any(), any(), eq("testEvent")))
             .thenReturn("workflow_1");
 
         Map<String, Object> output = actionProcessor.execute(action, payload, "testEvent", "testMessage");
@@ -67,7 +62,7 @@ public class TestActionProcessor {
         assertEquals("workflow_1", output.get("workflowId"));
 
         ArgumentCaptor<Map> argumentCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(workflowExecutor).startWorkflow(eq("testWorkflow"), eq(1), any(), argumentCaptor.capture(), eq("testEvent"));
+        verify(workflowExecutor).startWorkflow(eq("testWorkflow"), eq(null), any(), argumentCaptor.capture(), eq("testEvent"));
         assertEquals("test_1", argumentCaptor.getValue().get("testInput"));
         assertEquals("testMessage", argumentCaptor.getValue().get("conductor.event.messageId"));
         assertEquals("testEvent", argumentCaptor.getValue().get("conductor.event.name"));
@@ -80,8 +75,8 @@ public class TestActionProcessor {
         taskDetails.setTaskRefName("testTask");
 
         Action action = new Action();
-        action.setAction(Type.complete_task);
-        action.setComplete_task(taskDetails);
+        action.setAction(Type.COMPLETE_TASK);
+        action.setCompleteTask(taskDetails);
 
         Object payload = new ObjectMapper().readValue("{\"workflowId\":\"workflow_1\"}", Object.class);
 
@@ -110,18 +105,16 @@ public class TestActionProcessor {
         taskDetails.setTaskId("${taskId}");
 
         Action action = new Action();
-        action.setAction(Type.complete_task);
-        action.setComplete_task(taskDetails);
+        action.setAction(Type.COMPLETE_TASK);
+        action.setCompleteTask(taskDetails);
 
         Object payload = new ObjectMapper().readValue("{\"workflowId\":\"workflow_1\", \"taskId\":\"task_1\"}", Object.class);
 
         Task task = new Task();
         task.setTaskId("task_1");
         task.setReferenceTaskName("testTask");
-        Workflow workflow = new Workflow();
-        workflow.getTasks().add(task);
 
-        when(workflowExecutor.getWorkflow(eq("workflow_1"), anyBoolean())).thenReturn(workflow);
+        when(workflowExecutor.getTask(eq("task_1"))).thenReturn(task);
 
         actionProcessor.execute(action, payload, "testEvent", "testMessage");
 
