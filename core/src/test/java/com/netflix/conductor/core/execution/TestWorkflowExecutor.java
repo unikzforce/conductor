@@ -79,6 +79,7 @@ public class TestWorkflowExecutor {
     private ExecutionDAO executionDAO;
     private MetadataDAO metadataDAO;
     private QueueDAO queueDAO;
+    private WorkflowStatusListener workflowStatusListener;
 
     @Before
     public void init() {
@@ -86,6 +87,7 @@ public class TestWorkflowExecutor {
         executionDAO = mock(ExecutionDAO.class);
         metadataDAO = mock(MetadataDAO.class);
         queueDAO = mock(QueueDAO.class);
+        workflowStatusListener = mock(WorkflowStatusListener.class);
         ExternalPayloadStorageUtils externalPayloadStorageUtils = mock(ExternalPayloadStorageUtils.class);
         ObjectMapper objectMapper = new ObjectMapper();
         ParametersUtils parametersUtils = new ParametersUtils();
@@ -103,7 +105,8 @@ public class TestWorkflowExecutor {
 
         DeciderService deciderService = new DeciderService(parametersUtils, queueDAO, externalPayloadStorageUtils, taskMappers);
         MetadataMapperService metadataMapperService = new MetadataMapperService(metadataDAO);
-        workflowExecutor = new WorkflowExecutor(deciderService, metadataDAO, executionDAO, queueDAO, metadataMapperService, parametersUtils, config);
+        workflowExecutor = new WorkflowExecutor(deciderService, metadataDAO, executionDAO, queueDAO, metadataMapperService,
+                parametersUtils, workflowStatusListener, config);
     }
 
     @Test

@@ -90,6 +90,8 @@ public class WorkflowExecutor {
     private final MetadataMapperService metadataMapperService;
     private final ParametersUtils parametersUtils;
 
+    private WorkflowStatusListener workflowStatusListener;
+
     private int activeWorkerLastPollInSecs;
 
     public static final String DECIDER_QUEUE = "_deciderQueue";
@@ -103,6 +105,7 @@ public class WorkflowExecutor {
             QueueDAO queueDAO,
             MetadataMapperService metadataMapperService,
             ParametersUtils parametersUtils,
+            WorkflowStatusListener workflowStatusListener,
             Configuration config
     ) {
         this.deciderService = deciderService;
@@ -113,6 +116,7 @@ public class WorkflowExecutor {
         this.metadataMapperService = metadataMapperService;
         this.activeWorkerLastPollInSecs = config.getIntProperty("tasks.active.worker.lastpoll", 10);
         this.parametersUtils = parametersUtils;
+        this.workflowStatusListener = workflowStatusListener;
     }
 
     /**
@@ -488,7 +492,7 @@ public class WorkflowExecutor {
         logger.debug("Completing workflow execution for {}", wf.getWorkflowId());
         Workflow workflow = executionDAO.getWorkflow(wf.getWorkflowId(), false);
 
-        if (workflow.getStatus().equals(WorkflowStatus.COMPLETED)) {
+            if (workflow.getStatus().equals(WorkflowStatus.COMPLETED)) {
             executionDAO.removeFromPendingWorkflow(workflow.getWorkflowName(), workflow.getWorkflowId());
             logger.info("Workflow has already been completed.  Current status={}, workflowId= {}", workflow.getStatus(), wf.getWorkflowId());
             return;
@@ -535,6 +539,8 @@ public class WorkflowExecutor {
         Monitors.recordWorkflowCompletion(workflow.getWorkflowName(), workflow.getEndTime() - workflow.getStartTime(), wf.getOwnerApp());
         queueDAO.remove(DECIDER_QUEUE, workflow.getWorkflowId());    //remove from the sweep queue
         logger.debug("Removed workflow {} from decider queue", wf.getWorkflowId());
+
+        workflowStatusListener.onWorkflowCompleted(wf);
     }
 
     public void terminateWorkflow(String workflowId, String reason) {
@@ -629,6 +635,8 @@ public class WorkflowExecutor {
 
         // Send to atlas
         Monitors.recordWorkflowTermination(workflow.getWorkflowName(), workflow.getStatus(), workflow.getOwnerApp());
+
+        workflowStatusListener.onWorkflowTerminated(workflow);
     }
 
     /**
@@ -851,6 +859,8 @@ public class WorkflowExecutor {
         }
         workflow.setStatus(status);
         executionDAO.updateWorkflow(workflow);
+
+        workflowStatusListener.onWorkflowPaused(workflow);
     }
 
     /**
