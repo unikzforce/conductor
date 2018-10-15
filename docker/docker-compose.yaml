@@ -13,6 +13,11 @@ services:
     links:
       - elasticsearch:es
       - dynomite:dyno1
+    healthcheck:
+      test: curl -f http://localhost:8080/api/metadata/taskdefs/task_0/ || false
+      interval: 10s
+      timeout: 2s
+      retries: 7
 
   conductor-ui:
     environment:
@@ -32,3 +37,14 @@ services:
   elasticsearch:
     image: elasticsearch:5
     command: "-Etransport.host=0.0.0.0"
+
+  init-curl-tasks-and-workflows:
+    image: spotify/alpine
+    entrypoint: bash /opt/conductor/init.sh
+    volumes:
+      - ./init-script/init.sh:/opt/conductor/init.sh
+    depends_on:
+      conductor-server:
+        condition: service_healthy
+    links:
+      - conductor-server:conductor-server
