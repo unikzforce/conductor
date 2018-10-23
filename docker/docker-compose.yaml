@@ -1,5 +1,5 @@
 # Docker compose for netflix conductor + elasticsearch + dynomite
-version: '2'
+version: '2.1'
 services:
   conductor-server:
     environment:
